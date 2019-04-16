@@ -1,0 +1,175 @@
+!4块立方体,磁化方向不同，外面无铁轭
+/filename,halbach_2d_4f
+/title,halbach_2d
+
+rdsv=0.02
+
+a=0.03 !立方体的大小为0.03*0.03
+
+/prep7
+
+ET,1,plane53
+emunit,mks
+
+rectng,-0.045,-0.015,-0.015,0.015
+rectng,-0.015,0.015,0.015,0.045
+rectng,0.015,0.045,-0.015,0.015
+rectng,-0.015,0.015,-0.045,-0.015
+
+cyl4,0,0,0.005      ! dsv
+
+cyl4,0,0,0.1        ! background
+
+!rectng,-0.15,0.15,-0.15,0.15
+
+rectng,-5*0.1,5*0.1,-5*0.1,5*0.1
+
+asel,all
+aovlap,all
+numcmp,area
+
+mp,MURX,1,5730    !铁的参数改变
+mp,MURX,2,10000   !钢的参数改变
+
+mp,MGXX,3,1034500       !定义材料3，为磁体  N45
+mp,MURX,3,1.0445
+mp,MURX,4,1            ! dsv vaccum  空气
+mp,MURX,5,1            ! background  vaccum
+
+asel,s,area,,2    !dsv
+aatt,4,,1
+
+asel,s,area,,1     !magnet
+aatt,3,,1
+asel,s,area,,3     !magnet
+aatt,3,,1
+asel,s,area,,4     !magnet
+aatt,3,,1
+asel,s,area,,5    !magnet
+aatt,3,,1
+
+asel,s,area,,6   !background
+aatt,5,,1
+
+asel,s,area,,7   !background
+aatt,5,,1
+asel,s,area,,8   !background
+aatt,5,,1
+
+
+asel,s,area,,2
+mshape,1,2D
+mshkey,0
+smrtsiz,1
+amesh,all
+
+asel,s,area,,1
+mshape,1,2D
+mshkey,0
+smrtsiz,2
+amesh,all
+asel,s,area,,3
+mshape,1,2D
+mshkey,0
+smrtsiz,2
+amesh,all
+asel,s,area,,4
+mshape,1,2D
+mshkey,0
+smrtsiz,2
+amesh,all
+asel,s,area,,5
+mshape,1,2D
+mshkey,0
+smrtsiz,2
+amesh,all
+
+
+
+asel,s,area,,6
+mshape,1,2D
+mshkey,0
+smrtsiz,2
+amesh,all
+asel,s,area,,8
+mshape,1,2D
+mshkey,0
+smrtsiz,2
+amesh,all
+
+
+asel,s,area,,7
+mshape,1,2D
+mshkey,0
+smrtsiz,4
+amesh,all
+
+LOCAL,11,0,0,0,0,0
+LOCAL,12,0,0,0,0,90
+LOCAL,13,0,0,0,0,180
+LOCAL,14,0,0,0,0,270
+
+asel,s,,,1
+esla,s
+EMODIF,all,ESYS,11
+
+asel,s,,,3
+esla,s
+EMODIF,all,ESYS,13
+
+asel,s,,,4
+esla,s
+EMODIF,all,ESYS,11
+asel,s,,,5
+esla,s
+EMODIF,all,ESYS,13
+
+
+/solu
+antype,static
+nsel,s,loc,x,-5*0.10     !选择x坐标-4.0的所有节点，block的边界
+nsel,a,loc,x,5*0.10
+nsel,a,loc,y,-5*0.10
+nsel,a,loc,y,5*0.10
+
+d,all,Az,0       !z向磁通量为零
+
+allsel,all
+nsel,all
+
+solve
+finish
+
+
+/post1
+asel,s,area,,2
+esla,s
+          
+NSORT,B,sum
+*GET,BMAX,SORT,,MAX
+*GET,BMIN,SORT,,MIN
+          
+*GET,eMIN,ELEM,,NUM,MIN        !将最大的单元编号赋给VMAX
+*GET,eMAX,ELEM,,NUM,MAX        !将最小的单元编号赋给VMIN
+*GET,eCOUNT,ELEM,,COUNT
+
+                                    
+BSUM=0       !定义初值
+ASUM=0                 
+
+*DO,I,eMIN,eMAX,1   !循环开始，I由最小序号到最大序号进行加1的循环运算     
+     *GET,A,ELEM,I,AREA     !将第I个单元的体积赋给V
+    ASUM=ASUM+A  
+             
+    ESEL,S,ELEM,,I,,,1
+    ETABLE,BTN,B,SUM        !列表BTN
+    *GET,BT,ELEM,I,ETAB,BTN
+    BSUM=BSUM+BT*A
+*ENDDO
+
+BAVG=BSUM/ASUM
+PER=(BMAX-BMIN)/BAVG
+
+
+ALLSEL,ALL
+finish
